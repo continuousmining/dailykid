@@ -1,0 +1,76 @@
+{
+  "title": "Kids Schedule",
+  "config": {
+    "step": {
+      "user": {
+        "title": "Set up Kids Schedule",
+        "description": "Configure Kids Schedule to track your child's daily routines.",
+        "data": {
+          "name": "Integration Name",
+          "calendar_entity": "Calendar Entity",
+          "alexa_entity": "Alexa Device (Optional)",
+          "announcement_enabled": "Enable Voice Announcements",
+          "routine_start_announcement": "Announce When Routines Start",
+          "task_complete_announcement": "Announce Task Completions",
+          "routine_complete_announcement": "Announce Routine Completions",
+          "reset_time": "Daily Reset Time",
+          "require_order": "Require Tasks in Order"
+        }
+      }
+    },
+    "error": {
+      "invalid_calendar": "The selected calendar entity is invalid or not found",
+      "invalid_alexa": "The selected Alexa device is invalid or not found"
+    }
+  },
+  "services": {
+    "check_task": {
+      "name": "Check Task",
+      "description": "Mark a task as completed in a routine.",
+      "fields": {
+        "routine_id": {
+          "name": "Routine ID",
+          "description": "The unique identifier of the routine"
+        },
+        "task_index": {
+          "name": "Task Index",
+          "description": "The index of the task to check (starting from 0)"
+        }
+      }
+    },
+    "uncheck_task": {
+      "name": "Uncheck Task",
+      "description": "Mark a task as incomplete in a routine.",
+      "fields": {
+        "routine_id": {
+          "name": "Routine ID",
+          "description": "The unique identifier of the routine"
+        },
+        "task_index": {
+          "name": "Task Index",
+          "description": "The index of the task to uncheck (starting from 0)"
+        }
+      }
+    },
+    "reset_routine": {
+      "name": "Reset Routine",
+      "description": "Reset all tasks in a routine to incomplete status.",
+      "fields": {
+        "routine_id": {
+          "name": "Routine ID",
+          "description": "The unique identifier of the routine"
+        }
+      }
+    },
+    "announce": {
+      "name": "Announce",
+      "description": "Send a custom announcement message to the configured Alexa device.",
+      "fields": {
+        "message": {
+          "name": "Message",
+          "description": "The message to announce"
+        }
+      }
+    }
+  }
+}

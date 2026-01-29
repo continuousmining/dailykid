@@ -1,0 +1,321 @@
+# Kids Schedule - Example Automations
+# Copy these to your automations.yaml or create via the UI
+
+# ============================================================================
+# ROUTINE START ANNOUNCEMENTS
+# ============================================================================
+
+# Morning routine announcement with lights
+- alias: "Kids Schedule - Morning Routine Start"
+  description: "Turn on bedroom lights and announce morning routine"
+  trigger:
+    - platform: time
+      at: "07:00:00"
+  condition:
+    - condition: state
+      entity_id: binary_sensor.workday_sensor
+      state: "on"
+  action:
+    - service: light.turn_on
+      target:
+        entity_id: light.kids_bedroom
+      data:
+        brightness_pct: 50
+        kelvin: 3000
+    - delay:
+        seconds: 2
+    - service: kids_schedule.announce
+      data:
+        message: "Good morning! Time to start your morning routine. First, let's brush our teeth!"
+
+# After school routine reminder
+- alias: "Kids Schedule - After School Reminder"
+  description: "Remind kids to start after school routine"
+  trigger:
+    - platform: time
+      at: "15:30:00"
+  condition:
+    - condition: state
+      entity_id: binary_sensor.workday_sensor
+      state: "on"
+  action:
+    - service: kids_schedule.announce
+      data:
+        message: "Welcome home! Don't forget to put away your backpack and wash your hands."
+
+# Bedtime routine announcement
+- alias: "Kids Schedule - Bedtime Routine Start"
+  description: "Dim lights and announce bedtime routine"
+  trigger:
+    - platform: time
+      at: "20:00:00"
+  action:
+    - service: light.turn_on
+      target:
+        area_id: kids_room
+      data:
+        brightness_pct: 30
+        kelvin: 2700
+    - service: kids_schedule.announce
+      data:
+        message: "It's bedtime routine! Let's start by putting away our toys."
+
+# ============================================================================
+# TASK COMPLETION REWARDS
+# ============================================================================
+
+# Increment star counter when routine completes
+- alias: "Kids Schedule - Reward Star"
+  description: "Give a star for completing a routine"
+  trigger:
+    - platform: event
+      event_type: kids_schedule_routine_completed
+  action:
+    - service: counter.increment
+      target:
+        entity_id: counter.routine_stars
+    - service: kids_schedule.announce
+      data:
+        message: >
+          Awesome job! You earned a gold star! 
+          You now have {{ states('counter.routine_stars') }} stars this week!
+
+# Weekly star reset
+- alias: "Kids Schedule - Reset Weekly Stars"
+  description: "Reset star counter on Sunday night"
+  trigger:
+    - platform: time
+      at: "21:00:00"
+  condition:
+    - condition: time
+      weekday:
+        - sun
+  action:
+    - service: counter.reset
+      target:
+        entity_id: counter.routine_stars
+    - service: input_number.set_value
+      target:
+        entity_id: input_number.last_week_stars
+      data:
+        value: "{{ states('counter.routine_stars') | int }}"
+
+# ============================================================================
+# SMART NOTIFICATIONS
+# ============================================================================
+
+# Remind if morning routine not started
+- alias: "Kids Schedule - Morning Routine Reminder"
+  description: "Send reminder if routine hasn't started after 15 minutes"
+  trigger:
+    - platform: time
+      at: "07:15:00"
+  condition:
+    - condition: state
+      entity_id: binary_sensor.workday_sensor
+      state: "on"
+    - condition: template
+      value_template: >
+        {% set routine = state_attr('sensor.kids_schedule_daily', 'current_routine') %}
+        {{ routine and routine.completed == 0 }}
+  action:
+    - service: kids_schedule.announce
+      data:
+        message: "Friendly reminder - don't forget to start your morning routine!"
+
+# Celebrate halfway point
+- alias: "Kids Schedule - Halfway Celebration"
+  description: "Celebrate when halfway through a routine"
+  trigger:
+    - platform: event
+      event_type: kids_schedule_task_completed
+  condition:
+    - condition: template
+      value_template: >
+        {% set routine = state_attr('sensor.kids_schedule_current_routine', 'tasks') %}
+        {% set completed = state_attr('sensor.kids_schedule_current_routine', 'completed') %}
+        {% set total = state_attr('sensor.kids_schedule_current_routine', 'total') %}
+        {{ completed == (total / 2) | round(0, 'floor') }}
+  action:
+    - service: kids_schedule.announce
+      data:
+        message: "You're halfway done! Keep up the great work!"
+
+# ============================================================================
+# VISUAL CUES
+# ============================================================================
+
+# Change LED strip color based on routine progress
+- alias: "Kids Schedule - Progress LED Colors"
+  description: "Update LED strip color as routine progresses"
+  trigger:
+    - platform: event
+      event_type: kids_schedule_task_completed
+  action:
+    - service: light.turn_on
+      target:
+        entity_id: light.kids_led_strip
+      data:
+        rgb_color: >
+          {% set progress = state_attr('sensor.kids_schedule_current_routine', 'progress') | int %}
+          {% if progress < 25 %}
+            [255, 0, 0]
+          {% elif progress < 50 %}
+            [255, 165, 0]
+          {% elif progress < 75 %}
+            [255, 255, 0]
+          {% else %}
+            [0, 255, 0]
+          {% endif %}
+
+# Flash lights when routine completes
+- alias: "Kids Schedule - Completion Light Show"
+  description: "Celebrate routine completion with light flash"
+  trigger:
+    - platform: event
+      event_type: kids_schedule_routine_completed
+  action:
+    - repeat:
+        count: 3
+        sequence:
+          - service: light.turn_on
+            target:
+              entity_id: light.kids_bedroom
+            data:
+              rgb_color: [0, 255, 0]
+              brightness_pct: 100
+          - delay:
+              milliseconds: 500
+          - service: light.turn_off
+            target:
+              entity_id: light.kids_bedroom
+          - delay:
+              milliseconds: 500
+    - service: light.turn_on
+      target:
+        entity_id: light.kids_bedroom
+      data:
+        brightness_pct: 50
+
+# ============================================================================
+# TABLET/SCREEN AUTOMATION
+# ============================================================================
+
+# Wake tablet screen when routine starts
+- alias: "Kids Schedule - Wake Tablet Screen"
+  description: "Turn on tablet display when routine begins"
+  trigger:
+    - platform: event
+      event_type: kids_schedule_routine_started
+  action:
+    - service: switch.turn_on
+      target:
+        entity_id: switch.kids_tablet_screen
+
+# Return to dashboard after 5 minutes of inactivity
+- alias: "Kids Schedule - Return to Dashboard"
+  description: "Reset tablet to schedule view after inactivity"
+  trigger:
+    - platform: state
+      entity_id: binary_sensor.kids_tablet_motion
+      to: "off"
+      for:
+        minutes: 5
+  action:
+    - service: browser_mod.navigate
+      data:
+        path: /dashboard-kids
+        browser_id: kids_tablet
+
+# ============================================================================
+# PARENTAL NOTIFICATIONS
+# ============================================================================
+
+# Notify parent when child completes routine
+- alias: "Kids Schedule - Parent Notification"
+  description: "Send notification to parent when routine is done"
+  trigger:
+    - platform: event
+      event_type: kids_schedule_routine_completed
+  action:
+    - service: notify.mobile_app_parent_phone
+      data:
+        title: "Routine Complete! 🌟"
+        message: >
+          {{ trigger.event.data.routine_title }} has been completed!
+        data:
+          tag: "kids_schedule"
+          group: "Kids Schedule"
+
+# Daily summary notification
+- alias: "Kids Schedule - Daily Summary"
+  description: "Send daily routine completion summary to parents"
+  trigger:
+    - platform: time
+      at: "21:00:00"
+  action:
+    - service: notify.mobile_app_parent_phone
+      data:
+        title: "Today's Routine Summary"
+        message: >
+          Routines completed today: {{ states('counter.daily_routines_completed') }}
+          Stars earned: {{ states('counter.routine_stars') }}
+        data:
+          tag: "daily_summary"
+
+# ============================================================================
+# WEEKEND/HOLIDAY ADJUSTMENTS
+# ============================================================================
+
+# Different announcement for weekend mornings
+- alias: "Kids Schedule - Weekend Morning"
+  description: "Gentler morning routine for weekends"
+  trigger:
+    - platform: time
+      at: "09:00:00"
+  condition:
+    - condition: state
+      entity_id: binary_sensor.workday_sensor
+      state: "off"
+  action:
+    - service: kids_schedule.announce
+      data:
+        message: "Good morning! It's the weekend, so you can take your time with your routine today. Enjoy!"
+
+# Skip routine on holidays
+- alias: "Kids Schedule - Holiday Skip"
+  description: "Announce no routine on holidays"
+  trigger:
+    - platform: time
+      at: "07:00:00"
+  condition:
+    - condition: state
+      entity_id: calendar.holidays
+      state: "on"
+  action:
+    - service: kids_schedule.announce
+      data:
+        message: "Happy holiday! No routine today - enjoy your day off!"
+
+# ============================================================================
+# COUNTERS (Add to configuration.yaml)
+# ============================================================================
+
+# counter:
+#   routine_stars:
+#     name: Weekly Routine Stars
+#     icon: mdi:star
+#     step: 1
+#     
+#   daily_routines_completed:
+#     name: Daily Routines Completed
+#     icon: mdi:check-circle
+#     step: 1
+
+# input_number:
+#   last_week_stars:
+#     name: Last Week Stars
+#     min: 0
+#     max: 100
+#     step: 1
+#     icon: mdi:star-outline

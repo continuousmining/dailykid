@@ -1,0 +1,13 @@
+{
+  "domain": "kids_schedule",
+  "name": "Kids Schedule",
+  "codeowners": ["@yourusername"],
+  "config_flow": true,
+  "dependencies": [],
+  "documentation": "https://github.com/yourusername/kids-schedule",
+  "integration_type": "hub",
+  "iot_class": "local_polling",
+  "issue_tracker": "https://github.com/yourusername/kids-schedule/issues",
+  "requirements": ["python-dateutil>=2.8.2", "pyyaml>=6.0"],
+  "version": "1.0.0"
+}

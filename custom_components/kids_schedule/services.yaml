@@ -1,0 +1,60 @@
+check_task:
+  name: Check Task
+  description: Mark a task as completed in a routine
+  fields:
+    routine_id:
+      name: Routine ID
+      description: The unique identifier of the routine
+      required: true
+      selector:
+        text:
+    task_index:
+      name: Task Index
+      description: The index of the task to check (0-based)
+      required: true
+      selector:
+        number:
+          min: 0
+          mode: box
+
+uncheck_task:
+  name: Uncheck Task
+  description: Mark a task as incomplete in a routine
+  fields:
+    routine_id:
+      name: Routine ID
+      description: The unique identifier of the routine
+      required: true
+      selector:
+        text:
+    task_index:
+      name: Task Index
+      description: The index of the task to uncheck (0-based)
+      required: true
+      selector:
+        number:
+          min: 0
+          mode: box
+
+reset_routine:
+  name: Reset Routine
+  description: Reset all tasks in a routine to incomplete
+  fields:
+    routine_id:
+      name: Routine ID
+      description: The unique identifier of the routine
+      required: true
+      selector:
+        text:
+
+announce:
+  name: Announce
+  description: Send an announcement message to the configured Alexa device
+  fields:
+    message:
+      name: Message
+      description: The message to announce
+      required: true
+      selector:
+        text:
+          multiline: true
